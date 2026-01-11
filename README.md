@@ -77,14 +77,8 @@ Dự án phục vụ mục đích học tập, rèn luyện tư duy game logic v
 
 ## Định hướng phát triển
 - Mở rộng thêm nhiều loại cây trồng
-- Thêm NPC hoặc nhiệm vụ đơn giản
 - Lưu trạng thái game
 - Nâng cấp giao diện và hiệu ứng
-
----
-
-## Ghi chú
-Dự án tập trung vào các chức năng cốt lõi, dễ triển khai, phù hợp cho sinh viên mới học Flutter + Flame và lập trình game 2D cơ bản.
 
 ---
 
