@@ -33,16 +33,16 @@ Dự án được phát triển bởi nhóm 2 thành viên:
   - Badge MỚI / HIẾM, animal card màu theo loại
 
 ### 🌱 Cây Trồng Mới (5 loại)
-- 🫐 **Việt Quất** - Lv 16, 70🪙 hạt, 180🪙 thu hoạch
-- 🍑 **Đào** - Lv 20, 65🪙 hạt, 160🪙 thu hoạch
-- 💜 **Oải Hương** - Lv 14, 50🪙 hạt, 130🪙 thu hoạch
-- 🌶️ **Ớt** - Lv 11, 45🪙 hạt, 115🪙 thu hoạch
-- 🥬 **Bắp Cải** - Lv 3, 25🪙 hạt, 70🪙 thu hoạch
+- 🫐 **Việt Quất** - Lv 16, 70xu hạt, 180xu thu hoạch
+- 🍑 **Đào** - Lv 20, 65xu hạt, 160xu thu hoạch
+- 💜 **Oải Hương** - Lv 14, 50xu hạt, 130xu thu hoạch
+- 🌶️ **Ớt** - Lv 11, 45xu hạt, 115xu thu hoạch
+- 🥬 **Bắp Cải** - Lv 3, 25xu hạt, 70xu thu hoạch
 
 ### 🐾 Vật Nuôi Mới (3 loài)
-- 🐴 **Ngựa** - Lv 25, 450🪙, cho Sữa ngựa 🥛 (150🪙/lần)
-- 🦚 **Công** - Lv 22, 380🪙, cho Lông đuôi 🪶 (130🪙/lần)
-- 🦃 **Gà Tây** - Lv 12, 200🪙, cho Trứng lớn 🥚 (55🪙/lần)
+- 🐴 **Ngựa** - Lv 25, 450xu, cho Sữa ngựa 🥛 (150xu/lần)
+- 🦚 **Công** - Lv 22, 380xu, cho Lông đuôi  (130xu/lần)
+- 🦃 **Gà Tây** - Lv 12, 200xu, cho Trứng lớn 🥚 (55xu/lần)
 
 ### 🏠 Ngôi Nhà Nâng Cấp
 - **Bếp Nấu** 🍳: Nấu 5 món ăn với buff khác nhau
