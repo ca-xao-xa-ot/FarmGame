@@ -1,0 +1,118 @@
+{
+  "project_info": {
+    "project_number": "45239781334",
+    "project_id": "farm-game-ec7fd",
+    "storage_bucket": "farm-game-ec7fd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:45239781334:android:7fd3562a79f7a8936f8677",
+        "android_client_info": {
+          "package_name": "com.example.farm_game"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "45239781334-h7h559cmfatqpsedn6gpfgoakjvv3n0l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnMfSFeEK_qpqlFT8XsejPy4QuRlrZnr8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "45239781334-h7h559cmfatqpsedn6gpfgoakjvv3n0l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "45239781334-9um3obnhhfluh07i1mser9srqochbjh4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.farmgamev4"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:45239781334:android:d48864a6169a14a76f8677",
+        "android_client_info": {
+          "package_name": "com.example.farm_game_v4"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "45239781334-h7h559cmfatqpsedn6gpfgoakjvv3n0l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnMfSFeEK_qpqlFT8XsejPy4QuRlrZnr8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "45239781334-h7h559cmfatqpsedn6gpfgoakjvv3n0l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "45239781334-9um3obnhhfluh07i1mser9srqochbjh4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.farmgamev4"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:45239781334:android:edbef160e30ed0716f8677",
+        "android_client_info": {
+          "package_name": "com.example.farmgamev4"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "45239781334-h7h559cmfatqpsedn6gpfgoakjvv3n0l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnMfSFeEK_qpqlFT8XsejPy4QuRlrZnr8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "45239781334-h7h559cmfatqpsedn6gpfgoakjvv3n0l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "45239781334-9um3obnhhfluh07i1mser9srqochbjh4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.farmgamev4"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

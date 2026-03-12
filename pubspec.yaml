@@ -1,0 +1,32 @@
+name: farm_game
+description: "Nông Trại Xanh - 2D Farming Game v4 (Smooth Movement + Audio + No Firebase)"
+publish_to: 'none'
+version: 1.0.0+4
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  shared_preferences: ^2.3.2
+  uuid: ^4.5.1
+  audioplayers: ^6.0.0
+  # THÊM FIREBASE VÀO ĐÂY:
+  firebase_core: ^3.1.1
+  firebase_auth: ^5.1.2
+  cloud_firestore: ^5.0.2
+  google_sign_in: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/fonts/
+    - assets/audio/
