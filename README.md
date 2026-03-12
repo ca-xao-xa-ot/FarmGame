@@ -158,7 +158,7 @@ Tự động tạo mới mỗi ngày, ngẫu nhiên từ 6 loại:
 | 🌽 | Cho ăn | Cho 2 con ăn |
 | 🎣 | Câu cá | Câu được 2 con cá |
 | ⛏️ | Xới đất | Xới 4 ô đất |
-| 🪙 | Kiếm vàng | Kiếm 200 vàng |
+
 
 ---
 
@@ -307,22 +307,9 @@ GameProvider (ChangeNotifier)
 
 ---
 
-## 🗺️ Roadmap
 
-- [ ] 🏪 Mở rộng cửa hàng (bán sản phẩm chế biến)
-- [ ] 🌧️ Hệ thống thời tiết (mưa tự động tưới)
-- [ ] 👥 Multiplayer / coop farm
-- [ ] 🎪 Lễ hội mùa vụ hằng tháng
-- [ ] 📊 Thống kê chi tiết (biểu đồ thu nhập)
-- [ ] 🌍 Bản đồ mở rộng (unlock vùng đất mới)
 
----
 
-## 📄 License
-
-Dự án cá nhân / học tập. Không sử dụng cho mục đích thương mại khi chưa có sự đồng ý của tác giả.
-
----
 
 <div align="center">
 
