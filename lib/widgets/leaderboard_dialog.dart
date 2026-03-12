@@ -1,7 +1,7 @@
-// ================================================================
-//  LEADERBOARD DIALOG
-//  Shows ONLINE high-score board from Firebase Firestore
-// ================================================================
+
+
+
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
@@ -24,7 +24,7 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
 
   Future<void> _load() async {
     final gp = context.read<GameProvider>();
-    // Lấy dữ liệu từ Firestore thông qua GameProvider -> StorageService
+    
     final list = await gp.getLeaderboard();
     if (mounted) setState(() { _entries = list; _loading = false; });
   }
@@ -36,12 +36,12 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [Color(0xFF0D47A1), Color(0xFF1976D2)], // Đổi màu xanh dương cho cảm giác "Toàn cầu"
+          colors: [Color(0xFF0D47A1), Color(0xFF1976D2)], 
         ),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(children: [
-        // Handle
+        
         Container(
           margin: const EdgeInsets.symmetric(vertical: 10),
           width: 40, height: 4,
@@ -50,22 +50,22 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        // Title
+        
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           child: Row(children: [
-            Text('🌍', style: TextStyle(fontSize: 28)), // Đổi icon thành trái đất
+            Text('🌍', style: TextStyle(fontSize: 28)), 
             SizedBox(width: 10),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Top Nông Dân',
                   style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-              Text('Bảng xếp hạng toàn máy chủ', // Cập nhật text
+              Text('Bảng xếp hạng toàn máy chủ', 
                   style: TextStyle(color: Colors.white60, fontSize: 11)),
             ]),
           ]),
         ),
         const Divider(color: Colors.white24, height: 1),
-        // Body
+        
         Expanded(
           child: _loading
               ? const Center(child: CircularProgressIndicator(color: Colors.white))
@@ -73,7 +73,7 @@ class _LeaderboardDialogState extends State<LeaderboardDialog> {
               ? _buildEmpty()
               : _buildList(),
         ),
-        // Close
+        
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
           child: SizedBox(

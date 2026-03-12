@@ -7,7 +7,7 @@ class FirebaseService {
 
   String? get currentUserId => _auth.currentUser?.uid;
 
-  // Khởi tạo dữ liệu người chơi mới
+  
   Future<void> initUserData() async {
     if (currentUserId == null) return;
     DocumentReference userRef = _db.collection('users').doc(currentUserId);
@@ -19,7 +19,7 @@ class FirebaseService {
         'displayName': _auth.currentUser?.displayName ?? 'Nông dân',
         'gold': 100,
         'level': 1,
-        'inventory': [], // Thêm cái balo (Kho đồ) trống để đựng vật phẩm
+        'inventory': [], 
         'lastUpdated': FieldValue.serverTimestamp(),
       });
     }
@@ -45,27 +45,27 @@ class FirebaseService {
         .snapshots();
   }
 
-  // TÍNH NĂNG MỚI: Mua vật phẩm từ Cửa Hàng
+  
   Future<bool> buyItem(String itemEmoji, int price) async {
     if (currentUserId == null) return false;
     DocumentReference userRef = _db.collection('users').doc(currentUserId);
 
-    // Dùng Transaction để đảm bảo an toàn: Phải đủ tiền mới cho mua
+    
     return await _db.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(userRef);
       if (!snapshot.exists) return false;
 
       int currentGold = snapshot.get('gold') ?? 0;
       if (currentGold >= price) {
-        // Đủ tiền -> Trừ tiền và Thêm đồ vào kho
+        
         transaction.update(userRef, {
           'gold': currentGold - price,
-          'inventory': FieldValue.arrayUnion([itemEmoji]), // Nét đồ vào balo
+          'inventory': FieldValue.arrayUnion([itemEmoji]), 
           'lastUpdated': FieldValue.serverTimestamp(),
         });
-        return true; // Mua thành công
+        return true; 
       } else {
-        return false; // Không đủ tiền
+        return false; 
       }
     });
   }

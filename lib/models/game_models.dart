@@ -1,16 +1,13 @@
-// ================================================================
-//  ALL GAME MODELS  v8
-//  ✅ TileModel, AnimalModel, InventoryModel, DiaryEntry
-//  ✅ DailyQuest + QuestType
-//  ✅ Achievement (static list in constants, ids stored in player)
-//  ✅ PlayerModel: level, exp, quests, achievements, stat counters
-// ================================================================
+
+
+
+
 import 'dart:math';
 import '../utils/constants.dart';
 
-// ════════════════════════════════════════
-// TILE MODEL
-// ════════════════════════════════════════
+
+
+
 class TileModel {
   TileState state;
   CropType? cropType;
@@ -41,9 +38,9 @@ class TileModel {
   );
 }
 
-// ════════════════════════════════════════
-// ANIMAL MODEL  –  includes roaming AI
-// ════════════════════════════════════════
+
+
+
 class AnimalModel {
   final String id;
   final AnimalType type;
@@ -148,27 +145,42 @@ class AnimalModel {
   );
 }
 
-// ════════════════════════════════════════
-// INVENTORY MODEL
-// ════════════════════════════════════════
+
+
+
 class InventoryModel {
   Map<CropType, int> seeds;
   int fishCount;
   int eggCount;
   int milkCount;
+  int woolCount;
+  int honeyCount;
+  int horseMilkCount;
+  int peacockFeatherCount;
+  int turkeyEggCount;
 
   InventoryModel({
     Map<CropType, int>? seeds,
-    this.fishCount = 0,
-    this.eggCount  = 0,
-    this.milkCount = 0,
+    this.fishCount          = 0,
+    this.eggCount           = 0,
+    this.milkCount          = 0,
+    this.woolCount          = 0,
+    this.honeyCount         = 0,
+    this.horseMilkCount     = 0,
+    this.peacockFeatherCount= 0,
+    this.turkeyEggCount     = 0,
   }) : seeds = seeds ?? { for (final c in CropType.values) c: 0 };
 
   Map<String, dynamic> toMap() => {
-    'seeds'    : seeds.map((k, v) => MapEntry(k.index.toString(), v)),
-    'fishCount': fishCount,
-    'eggCount' : eggCount,
-    'milkCount': milkCount,
+    'seeds'              : seeds.map((k, v) => MapEntry(k.index.toString(), v)),
+    'fishCount'          : fishCount,
+    'eggCount'           : eggCount,
+    'milkCount'          : milkCount,
+    'woolCount'          : woolCount,
+    'honeyCount'         : honeyCount,
+    'horseMilkCount'     : horseMilkCount,
+    'peacockFeatherCount': peacockFeatherCount,
+    'turkeyEggCount'     : turkeyEggCount,
   };
 
   factory InventoryModel.fromMap(Map<String, dynamic> m) {
@@ -181,17 +193,22 @@ class InventoryModel {
       }
     });
     return InventoryModel(
-      seeds    : map,
-      fishCount: m['fishCount'] ?? 0,
-      eggCount : m['eggCount']  ?? 0,
-      milkCount: m['milkCount'] ?? 0,
+      seeds               : map,
+      fishCount           : m['fishCount']           ?? 0,
+      eggCount            : m['eggCount']            ?? 0,
+      milkCount           : m['milkCount']           ?? 0,
+      woolCount           : m['woolCount']           ?? 0,
+      honeyCount          : m['honeyCount']          ?? 0,
+      horseMilkCount      : m['horseMilkCount']      ?? 0,
+      peacockFeatherCount : m['peacockFeatherCount'] ?? 0,
+      turkeyEggCount      : m['turkeyEggCount']      ?? 0,
     );
   }
 }
 
-// ════════════════════════════════════════
-// DIARY ENTRY
-// ════════════════════════════════════════
+
+
+
 class DiaryEntry {
   final int day;
   String    content;
@@ -203,16 +220,16 @@ class DiaryEntry {
       DiaryEntry(day: m['day'] ?? 1, content: m['content'] ?? '');
 }
 
-// ════════════════════════════════════════
-// DAILY QUEST
-// ════════════════════════════════════════
+
+
+
 enum QuestType {
-  harvestCrops,   // Thu hoạch X cây
-  waterTiles,     // Tưới X ô đất
-  feedAnimals,    // Cho X con vật nuôi ăn
-  catchFish,      // Câu X con cá
-  tillSoil,       // Xới X ô đất
-  earnGold,       // Kiếm X vàng
+  harvestCrops,
+  waterTiles,
+  feedAnimals,
+  catchFish,
+  tillSoil,
+  earnGold,
 }
 
 extension QuestTypeExt on QuestType {
@@ -268,9 +285,7 @@ class DailyQuest {
   });
 
   double get progress => targetCount <= 0 ? 1.0 : (currentCount / targetCount).clamp(0.0, 1.0);
-
-  String get description =>
-      '${type.icon} ${type.verb} $targetCount ${type.unit}';
+  String get description => '${type.icon} ${type.verb} $targetCount ${type.unit}';
 
   Map<String, dynamic> toMap() => {
     'id'          : id,
@@ -293,9 +308,9 @@ class DailyQuest {
   );
 }
 
-// ════════════════════════════════════════
-// ACHIEVEMENT DATA  (static definitions)
-// ════════════════════════════════════════
+
+
+
 class AchievementDef {
   final String id;
   final String icon;
@@ -337,9 +352,9 @@ class Achievements {
   }
 }
 
-// ════════════════════════════════════════
-// PLAYER MODEL  (v8: quests + achievements + stat counters)
-// ════════════════════════════════════════
+
+
+
 class PlayerModel {
   String         uid;
   String         name;
@@ -349,20 +364,22 @@ class PlayerModel {
   double         playerX;
   double         playerY;
 
-  // Progression
   int            level;
   int            exp;
 
-  // Lifetime stats (for achievements)
   int            totalCropsHarvested;
   int            totalFishCaught;
   int            totalQuestsCompleted;
 
-  // Daily quests
-  List<DailyQuest> dailyQuests;
-  int              questDay;   // which game-day quests were generated
+  
+  int            lastGiftDay;
+  
+  int            avatarId;
+  int            flowerPotStyle;
 
-  // Achievements unlocked (list of id strings)
+  List<DailyQuest> dailyQuests;
+  int              questDay;
+
   List<String>   unlockedAchievements;
 
   InventoryModel inventory;
@@ -381,6 +398,9 @@ class PlayerModel {
     this.totalCropsHarvested   = 0,
     this.totalFishCaught       = 0,
     this.totalQuestsCompleted  = 0,
+    this.lastGiftDay           = 0,
+    this.avatarId              = 0,
+    this.flowerPotStyle        = 0,
     List<DailyQuest>? dailyQuests,
     this.questDay              = 0,
     List<String>?    unlockedAchievements,
@@ -413,6 +433,9 @@ class PlayerModel {
     'totalCropsHarvested' : totalCropsHarvested,
     'totalFishCaught'     : totalFishCaught,
     'totalQuestsCompleted': totalQuestsCompleted,
+    'lastGiftDay'         : lastGiftDay,
+    'avatarId'            : avatarId,
+    'flowerPotStyle'      : flowerPotStyle,
     'dailyQuests'         : dailyQuests.map((q) => q.toMap()).toList(),
     'questDay'            : questDay,
     'unlockedAchievements': unlockedAchievements,
@@ -433,6 +456,9 @@ class PlayerModel {
     totalCropsHarvested  : (m['totalCropsHarvested']  ?? 0) as int,
     totalFishCaught      : (m['totalFishCaught']      ?? 0) as int,
     totalQuestsCompleted : (m['totalQuestsCompleted'] ?? 0) as int,
+    lastGiftDay          : (m['lastGiftDay']      ?? 0) as int,
+    avatarId             : (m['avatarId']         ?? 0) as int,
+    flowerPotStyle       : (m['flowerPotStyle']   ?? 0) as int,
     dailyQuests          : m['dailyQuests'] != null
         ? (m['dailyQuests'] as List)
             .map((q) => DailyQuest.fromMap(q as Map<String, dynamic>))

@@ -1,7 +1,7 @@
-// ================================================================
-//  ACHIEVEMENT DIALOG  v8
-//  Hiển thị danh sách thành tích đã/chưa mở khóa
-// ================================================================
+
+
+
+
 import 'package:flutter/material.dart';
 import '../providers/game_provider.dart';
 import '../models/game_models.dart';
@@ -23,7 +23,7 @@ class AchievementDialog extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       child: Column(children: [
-        // Drag handle
+        
         Container(
           margin: const EdgeInsets.symmetric(vertical: 10),
           width: 40, height: 4,
@@ -32,7 +32,7 @@ class AchievementDialog extends StatelessWidget {
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        // Header
+        
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
           child: Row(children: [
@@ -60,7 +60,7 @@ class AchievementDialog extends StatelessWidget {
           ]),
         ),
 
-        // Progress bar
+        
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18),
           child: ClipRRect(
@@ -76,7 +76,7 @@ class AchievementDialog extends StatelessWidget {
         ),
         const SizedBox(height: 10),
 
-        // List
+        
         Expanded(
           child: ListView.builder(
             padding:
@@ -90,7 +90,7 @@ class AchievementDialog extends StatelessWidget {
           ),
         ),
 
-        // Close button
+        
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
           child: SizedBox(
@@ -142,7 +142,7 @@ class _AchItem extends StatelessWidget {
         ],
       ),
       child: Row(children: [
-        // Icon
+        
         Container(
           width: 46, height: 46,
           decoration: BoxDecoration(
@@ -159,7 +159,7 @@ class _AchItem extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        // Info
+        
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +184,7 @@ class _AchItem extends StatelessWidget {
             ],
           ),
         ),
-        // Reward badge
+        
         Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
             padding:

@@ -1,7 +1,7 @@
-// ================================================================
-//  QUEST PANEL WIDGET  v8
-//  Hiển thị 3 nhiệm vụ hàng ngày, tiến độ và nhận thưởng
-// ================================================================
+
+
+
+
 import 'package:flutter/material.dart';
 import '../providers/game_provider.dart';
 import '../models/game_models.dart';
@@ -26,7 +26,7 @@ class QuestPanelWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
+          
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 8, 6),
             child: Row(children: [
@@ -105,7 +105,7 @@ class _QuestItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row
+          
           Row(children: [
             Text(quest.type.icon, style: const TextStyle(fontSize: 14)),
             const SizedBox(width: 6),
@@ -124,7 +124,7 @@ class _QuestItem extends StatelessWidget {
           ]),
           const SizedBox(height: 5),
 
-          // Progress bar
+          
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
@@ -138,7 +138,7 @@ class _QuestItem extends StatelessWidget {
           ),
           const SizedBox(height: 4),
 
-          // Counter + rewards
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

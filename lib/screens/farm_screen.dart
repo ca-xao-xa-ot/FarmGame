@@ -41,7 +41,7 @@ class _FarmScreenState extends State<FarmScreen> {
     }
   }
 
-  // TÍNH NĂNG MỚI: Giao diện Cửa hàng bật lên từ dưới (BottomSheet)
+  
   void _openShop(BuildContext context) {
     showModalBottomSheet(
         context: context,
@@ -65,7 +65,7 @@ class _FarmScreenState extends State<FarmScreen> {
     );
   }
 
-  // Giao diện từng món đồ trong cửa hàng
+  
   Widget _buildShopItem(String name, String emoji, int price) {
     return ListTile(
       leading: Text(emoji, style: const TextStyle(fontSize: 30)),
@@ -76,7 +76,7 @@ class _FarmScreenState extends State<FarmScreen> {
         onPressed: () async {
           bool success = await _firebaseService.buyItem(emoji, price);
           if (mounted) {
-            Navigator.pop(context); // Đóng cửa hàng
+            Navigator.pop(context); 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(success ? 'Mua $name thành công! $emoji' : 'Không đủ Vàng để mua $name! 😢')),
             );
@@ -144,7 +144,7 @@ class _FarmScreenState extends State<FarmScreen> {
           var data = snapshot.data?.data() as Map<String, dynamic>?;
           int gold = data?['gold'] ?? 0;
           String name = data?['displayName'] ?? 'Nông dân';
-          // Lấy danh sách đồ trong Kho
+          
           List<dynamic> inventory = data?['inventory'] ?? [];
 
           return Center(
@@ -154,7 +154,7 @@ class _FarmScreenState extends State<FarmScreen> {
                 Text('Chào, $name!', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green)),
                 const SizedBox(height: 20),
 
-                // Hiển thị số Vàng
+                
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                   decoration: BoxDecoration(color: Colors.amber[100], borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.amber, width: 2)),
@@ -169,7 +169,7 @@ class _FarmScreenState extends State<FarmScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Hiển thị Kho Đồ (Nông trại thực tế của bạn)
+                
                 Container(
                   width: 300,
                   height: 100,
@@ -193,7 +193,7 @@ class _FarmScreenState extends State<FarmScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Nút thu hoạch kiếm Vàng
+                
                 ElevatedButton.icon(
                   onPressed: _farmCorn,
                   icon: const Text('🌽', style: TextStyle(fontSize: 30)),
@@ -207,7 +207,7 @@ class _FarmScreenState extends State<FarmScreen> {
 
                 const SizedBox(height: 20),
 
-                // NÚT MỞ CỬA HÀNG
+                
                 ElevatedButton.icon(
                   onPressed: () => _openShop(context),
                   icon: const Icon(Icons.store, size: 30),

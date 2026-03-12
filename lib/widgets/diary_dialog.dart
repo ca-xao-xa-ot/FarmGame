@@ -1,7 +1,7 @@
-// ================================================================
-//  DIARY DIALOG
-//  Lets the player write / read a diary entry for each day
-// ================================================================
+
+
+
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
@@ -51,7 +51,7 @@ class _DiaryDialogState extends State<DiaryDialog> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
         child: Column(children: [
-          // Handle
+          
           Container(
             margin: const EdgeInsets.symmetric(vertical: 10),
             width: 40, height: 4,
@@ -60,7 +60,7 @@ class _DiaryDialogState extends State<DiaryDialog> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          // Header
+          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(children: [
@@ -74,7 +74,7 @@ class _DiaryDialogState extends State<DiaryDialog> {
                     style: const TextStyle(fontSize: 12, color: Colors.brown)),
               ]),
               const Spacer(),
-              // Day picker
+              
               _DayPicker(
                 currentDay: _day,
                 maxDay: gp.player?.currentDay ?? 1,
@@ -89,7 +89,7 @@ class _DiaryDialogState extends State<DiaryDialog> {
             ]),
           ),
           const Divider(color: Color(0xFFD7CCC8)),
-          // Text area
+          
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -110,18 +110,18 @@ class _DiaryDialogState extends State<DiaryDialog> {
                   filled: true,
                   fillColor: const Color(0xFFFFF8E1),
                 ),
-                // Read-only for past days? Let them edit any day
+                
               ),
             ),
           ),
-          // Footer
+          
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: Row(children: [
-              // Stats snapshot
+              
               Expanded(child: _StatsSnapshot(gp: gp)),
               const SizedBox(width: 10),
-              // Save button
+              
               ElevatedButton.icon(
                 icon: const Text('💾', style: TextStyle(fontSize: 16)),
                 label: const Text('Lưu', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -141,7 +141,7 @@ class _DiaryDialogState extends State<DiaryDialog> {
   }
 }
 
-// ── Day picker arrows ────────────────────────────────────────────
+
 class _DayPicker extends StatelessWidget {
   final int currentDay, maxDay;
   final ValueChanged<int> onChanged;
@@ -168,7 +168,7 @@ class _DayPicker extends StatelessWidget {
   }
 }
 
-// ── Stats snapshot row ───────────────────────────────────────────
+
 class _StatsSnapshot extends StatelessWidget {
   final GameProvider gp;
   const _StatsSnapshot({required this.gp});

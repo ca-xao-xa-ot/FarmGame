@@ -19,8 +19,8 @@ class FarmGameApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      // Nếu vào game vẫn thấy nền xanh không có cây cối, hãy thử đổi dòng dưới thành:
-      // create: (context) => GameProvider()..init(),
+      
+      
       create: (context) => GameProvider(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

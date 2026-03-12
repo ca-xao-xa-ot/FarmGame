@@ -11,11 +11,19 @@ class ToolbarWidget extends StatelessWidget {
     return Container(
       height: 92,
       decoration: BoxDecoration(
-        color: const Color(0xFF3E2723).withOpacity(0.94),
-        border: const Border(top: BorderSide(color: Color(0xFF8D6E63), width: 2)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [Color(0xFF3E2723), Color(0xFF4E342E)],
+        ),
+        border: Border(top: BorderSide(
+            color: const Color(0xFF8D6E63).withOpacity(0.6), width: 1.5)),
+        boxShadow: [BoxShadow(
+          color: Colors.black.withOpacity(0.3),
+          blurRadius: 10, offset: const Offset(0, -4),
+        )],
       ),
       child: Row(children: [
-        // ── Tools row ─────────────────────────────────────────
+        
         Expanded(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -26,32 +34,44 @@ class ToolbarWidget extends StatelessWidget {
                 return GestureDetector(
                   onTap: () => gp.setTool(tool),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 130),
+                    duration: const Duration(milliseconds: 150),
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: 66, height: 70,
                     decoration: BoxDecoration(
-                      color: sel ? const Color(0xFFFFD54F) : const Color(0xFF5D4037),
-                      borderRadius: BorderRadius.circular(13),
+                      gradient: sel
+                          ? const LinearGradient(
+                              colors: [Color(0xFFFFD54F), Color(0xFFFF8F00)])
+                          : LinearGradient(
+                              colors: [const Color(0xFF5D4037), const Color(0xFF4E342E)]),
+                      borderRadius: BorderRadius.circular(15),
                       border: Border.all(
-                        color: sel ? const Color(0xFFFFA000) : Colors.transparent,
-                        width: 2.5,
+                        color: sel
+                            ? const Color(0xFFFFD54F)
+                            : Colors.white.withOpacity(0.1),
+                        width: 2,
                       ),
                       boxShadow: sel
-                          ? [BoxShadow(
-                              color: const Color(0xFFFFD54F).withOpacity(0.45),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            )]
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFFFFD54F).withOpacity(0.5),
+                                blurRadius: 10, spreadRadius: 2,
+                              ),
+                            ]
                           : [],
                     ),
                     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Text(tool.emoji, style: TextStyle(fontSize: sel ? 26 : 22)),
-                      const SizedBox(height: 1),
-                      Text('[${tool.hotkey}] ${tool.label}',
+                      const SizedBox(height: 2),
+                      Text('[${tool.hotkey}]',
+                        style: TextStyle(
+                          color: sel ? const Color(0xFF3E2723) : Colors.white38,
+                          fontSize: 8, fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(tool.label,
                         style: TextStyle(
                           color: sel ? Colors.black87 : Colors.white60,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 8, fontWeight: FontWeight.w600,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -63,7 +83,7 @@ class ToolbarWidget extends StatelessWidget {
           ),
         ),
 
-        // ── Seed bag: show ALL seeds bought (not only 1) ───────
+        
         if (gp.selectedTool == ToolType.hand)
           Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -109,7 +129,7 @@ class _SeedBag extends StatelessWidget {
         ),
         const SizedBox(width: 8),
 
-        // Quick row of all owned seeds
+        
         if (owned.isEmpty)
           const Text('Chưa có hạt',
               style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold))

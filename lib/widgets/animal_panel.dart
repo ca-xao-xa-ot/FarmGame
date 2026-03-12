@@ -1,9 +1,9 @@
-// ================================================================
-//  ANIMAL PANEL  v8
-//  ✅ Fix #5: Feed icon changed 🍖→🌽 (cám/thức ăn) for all animals
-//  ✅ Add fish sell row at top of panel
-//  ✅ Close/open toggle retained
-// ================================================================
+
+
+
+
+
+
 import 'package:flutter/material.dart';
 import '../providers/game_provider.dart';
 import '../models/game_models.dart';
@@ -24,11 +24,11 @@ class AnimalPanelWidget extends StatelessWidget {
           _Header(gp: gp, onClose: onClose),
           const SizedBox(height: 5),
 
-          // ── Fish sell card ─────────────────────────────────
+          
           _FishCard(gp: gp),
           const SizedBox(height: 5),
 
-          // ── Animal cards ───────────────────────────────────
+          
           ...gp.animals.map((a) => _AnimalCard(
             animal   : a,
             onFeed   : () => gp.feedAnimal(a.id),
@@ -40,7 +40,7 @@ class AnimalPanelWidget extends StatelessWidget {
   }
 }
 
-// ── Header ────────────────────────────────────────────────────
+
 class _Header extends StatelessWidget {
   final GameProvider gp;
   final VoidCallback onClose;
@@ -62,7 +62,7 @@ class _Header extends StatelessWidget {
                 color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
         const SizedBox(width: 8),
 
-        // Feed all button  ✅ icon changed to 🌽
+        
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => gp.feedAllAnimals(),
@@ -85,7 +85,7 @@ class _Header extends StatelessWidget {
         ),
 
         const SizedBox(width: 8),
-        // Close button
+        
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onClose,
@@ -110,7 +110,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-// ── Fish sell card ────────────────────────────────────────────
+
 class _FishCard extends StatelessWidget {
   final GameProvider gp;
   const _FishCard({required this.gp});
@@ -125,7 +125,7 @@ class _FishCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: hasFish
-            ? const Color(0xFFE3F2FD)   // blue tint when fish available
+            ? const Color(0xFFE3F2FD)   
             : Colors.white.withOpacity(0.90),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
@@ -142,7 +142,7 @@ class _FishCard extends StatelessWidget {
         ],
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        // Fish emoji with badge count
+        
         Stack(clipBehavior: Clip.none, children: [
           Text('🐟', style: TextStyle(fontSize: hasFish ? 26 : 22)),
           if (hasFish)
@@ -181,7 +181,7 @@ class _FishCard extends StatelessWidget {
           ]),
         ),
         const SizedBox(width: 8),
-        // Sell button
+        
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: hasFish ? () => gp.sellFish() : null,
@@ -212,7 +212,7 @@ class _FishCard extends StatelessWidget {
   }
 }
 
-// ── Animal card ───────────────────────────────────────────────
+
 class _AnimalCard extends StatelessWidget {
   final AnimalModel  animal;
   final VoidCallback onFeed;
@@ -230,14 +230,15 @@ class _AnimalCard extends StatelessWidget {
     final canProd = animal.canProduce();
     final emoji   = isAdult ? animal.type.emoji : animal.type.babyEmoji;
 
-    // Produce icon per animal type
+    
     String produceIcon;
-    if (animal.type == AnimalType.cow) {
-      produceIcon = '🥛';
-    } else if (animal.type == AnimalType.pig) {
-      produceIcon = '🥩';
-    } else {
-      produceIcon = '🥚'; // chicken & duck
+    switch (animal.type) {
+      case AnimalType.cow:    produceIcon = '🥛'; break;
+      case AnimalType.pig:    produceIcon = '🥩'; break;
+      case AnimalType.sheep:  produceIcon = '🧶'; break;
+      case AnimalType.rabbit: produceIcon = '🪶'; break;
+      case AnimalType.bee:    produceIcon = '🍯'; break;
+      default:                produceIcon = '🥚'; 
     }
 
     return Container(
@@ -267,7 +268,7 @@ class _AnimalCard extends StatelessWidget {
                     style: const TextStyle(fontSize: 14))),
         ]),
         const SizedBox(height: 2),
-        // ✅ Status: use 🌽 instead of 🍖 for feed icon
+        
         Text(
           isAdult ? (animal.isFed ? '✅ No' : '🌽 Đói') : '🌱 Nhỏ',
           style: TextStyle(
@@ -280,7 +281,7 @@ class _AnimalCard extends StatelessWidget {
         ),
         const SizedBox(height: 4),
 
-        // Feed button  ✅ icon: 🌽
+        
         _SmallBtn(
           label   : '🌽',
           sublabel: '-${animal.type.feedCost}🪙',
@@ -289,7 +290,7 @@ class _AnimalCard extends StatelessWidget {
           onTap   : onFeed,
         ),
         const SizedBox(height: 3),
-        // Collect button
+        
         _SmallBtn(
           label   : produceIcon,
           sublabel: '+${animal.type.produceVal}🪙',

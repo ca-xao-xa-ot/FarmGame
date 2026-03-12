@@ -1,12 +1,12 @@
+
+
+
+
+
+
+
+
 import 'package:firebase_auth/firebase_auth.dart';
-// ================================================================
-//  GAME PROVIDER  v8
-//  ✅ Quest system (3 daily quests, generate on new day)
-//  ✅ Achievement system (15 achievements, check on actions)
-//  ✅ Quest progress tracked on harvest/water/feed/fish/till
-//  ✅ Fish sell via panel (sellFish() already present)
-//  ✅ Level/XP system retained
-// ================================================================
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -16,10 +16,11 @@ import 'package:uuid/uuid.dart';
 import '../models/game_models.dart';
 import '../utils/constants.dart';
 import '../services/local_storage_service.dart';
+import '../services/firebase_save_service.dart';
 import '../services/audio_service.dart';
 
 class GameProvider extends ChangeNotifier {
-  // ─── Core state ──────────────────────────────────────────────
+  
   PlayerModel?          player;
   List<List<TileModel>> tiles           = [];
   List<AnimalModel>     animals         = [];
@@ -28,14 +29,19 @@ class GameProvider extends ChangeNotifier {
   GameScene             currentScene    = GameScene.farm;
   bool                  isNight         = false;
   bool                  isFishing       = false;
-  bool                  fishingJustDone = false; // ← screen uses to auto-open animal panel
+  bool                  fishingJustDone = false;
   bool                  isLoading       = false;
   bool                  gameStarted     = false;
   String                message         = '';
   bool                  showMessage     = false;
   int                   fishingCountdown= 0;
 
-  // ─── Player position & physics ───────────────────────────────
+  
+  
+  final Map<String, double> _hoeProgress = {};
+  Map<String, double> get hoeProgress => _hoeProgress;
+
+  
   double playerCol = 5.0;
   double playerRow = 7.0;
   int    playerDir = 0;
@@ -44,18 +50,20 @@ class GameProvider extends ChangeNotifier {
   double _velX = 0.0;
   double _velY = 0.0;
 
-  // ─── Keyboard / virtual-button state ─────────────────────────
+  
   final Set<LogicalKeyboardKey> _pressedKeys = {};
 
-  // ─── Services ────────────────────────────────────────────────
-  final LocalStorageService _storage = LocalStorageService();
-  final AudioService        _audio   = AudioService();
-  final Uuid                _uuid    = const Uuid();
-  Timer?                    _animalTimer;
+  
+  final LocalStorageService  _storage = LocalStorageService();
+  final FirebaseSaveService  _cloud   = FirebaseSaveService();
+  final AudioService         _audio   = AudioService();
+  final Uuid                 _uuid    = const Uuid();
+  Timer?                     _animalTimer;
+  Timer?                     _cloudSaveDebounce;
 
   AudioService get audio => _audio;
 
-  // ── Progression / Level ──────────────────────────────────────
+  
   int get expToNextLevel {
     final lv = player?.level ?? 1;
     if (lv >= GameConstants.maxLevel) return 0;
@@ -64,7 +72,7 @@ class GameProvider extends ChangeNotifier {
     return need.clamp(60, 5000);
   }
 
-  bool isCropUnlocked(CropType c)   => (player?.level ?? 1) >= c.unlockLevel;
+  bool isCropUnlocked(CropType c)    => (player?.level ?? 1) >= c.unlockLevel;
   bool isAnimalUnlocked(AnimalType a) => (player?.level ?? 1) >= a.unlockLevel;
 
   void showToast(String msg) => _showMsg(msg);
@@ -85,18 +93,13 @@ class GameProvider extends ChangeNotifier {
     _checkAchievements();
   }
 
-  // ─── Daily Quests ────────────────────────────────────────────
-
+  
   List<DailyQuest> get dailyQuests => player?.dailyQuests ?? [];
 
-  /// Generate 3 random quests for a new day
   void _generateDailyQuests(int day) {
     if (player == null) return;
-
     final rng = GameConstants.rng;
     final lv  = player!.level;
-
-    // Pool of possible quest templates
     final pool = <QuestType>[
       QuestType.harvestCrops,
       QuestType.waterTiles,
@@ -105,77 +108,46 @@ class GameProvider extends ChangeNotifier {
     ];
     if (animals.isNotEmpty) pool.add(QuestType.feedAnimals);
     pool.shuffle(rng);
-
     final chosen = pool.take(3).toList();
 
     player!.dailyQuests = chosen.map((type) {
-      int target;
-      int expRew;
-      int goldRew;
+      int target, expRew, goldRew;
       switch (type) {
         case QuestType.harvestCrops:
-          target = (3 + lv ~/ 5).clamp(3, 15);
-          expRew = 20 + lv * 2;
-          goldRew = 30 + lv * 5;
-          break;
+          target = (3 + lv ~/ 5).clamp(3, 15); expRew = 20 + lv * 2; goldRew = 30 + lv * 5; break;
         case QuestType.waterTiles:
-          target = (4 + lv ~/ 4).clamp(4, 20);
-          expRew = 15 + lv;
-          goldRew = 20 + lv * 3;
-          break;
+          target = (4 + lv ~/ 4).clamp(4, 20); expRew = 15 + lv;     goldRew = 20 + lv * 3; break;
         case QuestType.feedAnimals:
-          target = (animals.length).clamp(1, 5);
-          expRew = 18 + lv * 2;
-          goldRew = 25 + lv * 4;
-          break;
+          target = (animals.length).clamp(1, 5); expRew = 18 + lv * 2; goldRew = 25 + lv * 4; break;
         case QuestType.catchFish:
-          target = (2 + lv ~/ 6).clamp(2, 8);
-          expRew = 25 + lv * 2;
-          goldRew = 40 + lv * 5;
-          break;
+          target = (2 + lv ~/ 6).clamp(2, 8); expRew = 25 + lv * 2; goldRew = 40 + lv * 5; break;
         case QuestType.tillSoil:
-          target = (3 + lv ~/ 5).clamp(3, 12);
-          expRew = 12 + lv;
-          goldRew = 15 + lv * 2;
-          break;
+          target = (3 + lv ~/ 5).clamp(3, 12); expRew = 12 + lv; goldRew = 15 + lv * 2; break;
         case QuestType.earnGold:
-          target = (100 + lv * 20).clamp(100, 2000);
-          expRew = 30 + lv * 3;
-          goldRew = 0;
-          break;
+          target = (100 + lv * 20).clamp(100, 2000); expRew = 30 + lv * 3; goldRew = 0; break;
       }
       return DailyQuest(
-        id         : _uuid.v4(),
-        type       : type,
-        targetCount: target,
-        expReward  : expRew,
-        goldReward : goldRew,
+        id: _uuid.v4(), type: type, targetCount: target,
+        expReward: expRew, goldReward: goldRew,
       );
     }).toList();
-
     player!.questDay = day;
   }
 
-  /// Called when a tracked action happens
   void _progressQuest(QuestType type, {int amount = 1}) {
     if (player == null) return;
     bool anyNewlyCompleted = false;
-
     for (final q in player!.dailyQuests) {
       if (q.type == type && !q.completed) {
         q.currentCount = (q.currentCount + amount).clamp(0, q.targetCount);
         if (q.currentCount >= q.targetCount) {
           q.completed = true;
           anyNewlyCompleted = true;
-          // Give reward
           player!.gold += q.goldReward;
           player!.totalGoldEarned += q.goldReward;
           player!.totalQuestsCompleted++;
           _addExp(q.expReward);
-          _showMsg(
-            '📋 Hoàn thành nhiệm vụ "${q.description}"!\n'
-            '+${q.expReward} EXP  +${q.goldReward}🪙',
-          );
+          _showMsg('📋 Hoàn thành nhiệm vụ \"${q.description}\"!\n+${q.expReward} EXP  +${q.goldReward}🪙');
           _checkAchievements();
         }
       }
@@ -183,10 +155,8 @@ class GameProvider extends ChangeNotifier {
     if (anyNewlyCompleted) _saveAll();
   }
 
-  // ─── Achievements ─────────────────────────────────────────────
-
-  bool hasAchievement(String id) =>
-      player?.unlockedAchievements.contains(id) ?? false;
+  
+  bool hasAchievement(String id) => player?.unlockedAchievements.contains(id) ?? false;
 
   void _unlockAchievement(String id) {
     if (player == null || hasAchievement(id)) return;
@@ -194,35 +164,33 @@ class GameProvider extends ChangeNotifier {
     if (def == null) return;
     player!.unlockedAchievements.add(id);
     _addExp(def.expReward);
-    _showMsg('🏅 Thành tích: "${def.title}" +${def.expReward} EXP!');
+    _showMsg('🏅 Thành tích: \"${def.title}\" +${def.expReward} EXP!');
     _saveAll();
   }
 
   void _checkAchievements() {
     if (player == null) return;
     final p = player!;
-
-    if (p.totalCropsHarvested >= 1)  _unlockAchievement('first_harvest');
-    if (p.totalCropsHarvested >= 10) _unlockAchievement('harvest_10');
-    if (p.totalCropsHarvested >= 50) _unlockAchievement('harvest_50');
-    if (animals.isNotEmpty)          _unlockAchievement('first_animal');
-    if (animals.length >= 5)         _unlockAchievement('animals_5');
-    if (p.totalFishCaught >= 1)      _unlockAchievement('first_fish');
-    if (p.totalFishCaught >= 20)     _unlockAchievement('fish_20');
-    if (p.totalGoldEarned >= 1000)   _unlockAchievement('gold_1000');
-    if (p.totalGoldEarned >= 5000)   _unlockAchievement('gold_5000');
-    if (p.level >= 5)                _unlockAchievement('level_5');
-    if (p.level >= 10)               _unlockAchievement('level_10');
-    if (p.level >= 25)               _unlockAchievement('level_25');
+    if (p.totalCropsHarvested >= 1)   _unlockAchievement('first_harvest');
+    if (p.totalCropsHarvested >= 10)  _unlockAchievement('harvest_10');
+    if (p.totalCropsHarvested >= 50)  _unlockAchievement('harvest_50');
+    if (animals.isNotEmpty)           _unlockAchievement('first_animal');
+    if (animals.length >= 5)          _unlockAchievement('animals_5');
+    if (p.totalFishCaught >= 1)       _unlockAchievement('first_fish');
+    if (p.totalFishCaught >= 20)      _unlockAchievement('fish_20');
+    if (p.totalGoldEarned >= 1000)    _unlockAchievement('gold_1000');
+    if (p.totalGoldEarned >= 5000)    _unlockAchievement('gold_5000');
+    if (p.level >= 5)                 _unlockAchievement('level_5');
+    if (p.level >= 10)                _unlockAchievement('level_10');
+    if (p.level >= 25)                _unlockAchievement('level_25');
     if (p.totalQuestsCompleted >= 10) _unlockAchievement('quest_10');
-    if (p.currentDay >= 10)          _unlockAchievement('survived_10');
-    if (p.currentDay >= 30)          _unlockAchievement('survived_30');
+    if (p.currentDay >= 10)           _unlockAchievement('survived_10');
+    if (p.currentDay >= 30)           _unlockAchievement('survived_30');
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // TICKER CALLBACK  (60 fps)
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   void updateFrame(double dt) {
     if (!gameStarted || currentScene != GameScene.farm) return;
     _updatePlayerPhysics(dt.clamp(0.0, 0.05));
@@ -230,7 +198,6 @@ class GameProvider extends ChangeNotifier {
 
   void _updatePlayerPhysics(double dt) {
     double intentX = 0, intentY = 0;
-
     if (_pressedKeys.contains(LogicalKeyboardKey.keyA) ||
         _pressedKeys.contains(LogicalKeyboardKey.arrowLeft))  intentX -= 1;
     if (_pressedKeys.contains(LogicalKeyboardKey.keyD) ||
@@ -255,7 +222,6 @@ class GameProvider extends ChangeNotifier {
       _velX *= (1.0 - (fric * dt).clamp(0.0, 1.0));
       if (_velX.abs() < 0.02) _velX = 0;
     }
-
     if (intentY != 0) {
       _velY += (intentY * maxSpd - _velY) * accel * dt;
     } else {
@@ -265,13 +231,8 @@ class GameProvider extends ChangeNotifier {
 
     final newCol = playerCol + _velX * dt;
     final newRow = playerRow + _velY * dt;
-
-    if (_canMoveTo(newCol, playerRow)) {
-      playerCol = newCol;
-    } else { _velX = 0; }
-    if (_canMoveTo(playerCol, newRow)) {
-      playerRow = newRow;
-    } else { _velY = 0; }
+    if (_canMoveTo(newCol, playerRow)) { playerCol = newCol; } else { _velX = 0; }
+    if (_canMoveTo(playerCol, newRow)) { playerRow = newRow; } else { _velY = 0; }
 
     if (_velX.abs() > 0.05 || _velY.abs() > 0.05) {
       if (_velX.abs() >= _velY.abs()) {
@@ -283,18 +244,13 @@ class GameProvider extends ChangeNotifier {
 
     final wasMoving = isMoving;
     isMoving = _velX.abs() > 0.02 || _velY.abs() > 0.02;
-
-    if (player != null) {
-      player!.playerX = playerCol;
-      player!.playerY = playerRow;
-    }
+    if (player != null) { player!.playerX = playerCol; player!.playerY = playerRow; }
     if (isMoving || wasMoving) notifyListeners();
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // COLLISION
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   bool _canMoveTo(double col, double row) {
     final r = GameConstants.playerRadius;
     if (col - r < 0 || col + r > GameConstants.farmCols - 0.3) return false;
@@ -310,10 +266,9 @@ class GameProvider extends ChangeNotifier {
       (playerCol - GameConstants.houseCol).abs() < 3.5 &&
       (playerRow - GameConstants.houseRow).abs() < 3.5;
 
-  // ═══════════════════════════════════════════════════════════
-  // KEYBOARD / VIRTUAL D-PAD INPUT
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   void handleKeyDown(LogicalKeyboardKey key) {
     _pressedKeys.add(key);
     if (key == LogicalKeyboardKey.digit1) setTool(ToolType.hand);
@@ -350,21 +305,40 @@ class GameProvider extends ChangeNotifier {
     onTileTap(tr.round(), tc.round());
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // INIT / LOAD
-  // ═══════════════════════════════════════════════════════════
+  
+  
+  
 
-  // ═══════════════════════════════════════════════════════════
-  // INIT / LOAD
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
   Future<void> startNewGame(String name) async {
     isLoading = true; notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
 
-    // ĐỒNG BỘ UID TỪ FIREBASE (Thay vì tạo random UUID)
     final User? currentUser = FirebaseAuth.instance.currentUser;
     String uid = currentUser?.uid ?? _uuid.v4();
+
+    
+    
+    if (currentUser != null) {
+      final cloudSave = await _cloud.loadGame();
+      if (cloudSave != null) {
+        player    = cloudSave.player;
+        player!.uid = uid;
+        playerCol = player!.playerX; playerRow = player!.playerY;
+        tiles     = cloudSave.tiles;
+        animals   = cloudSave.animals;
+        gameStarted = true;
+        _startAnimalTimer();
+        await _saveLocal();
+        isLoading = false; notifyListeners();
+        _audio.startDayBgm();
+        _showMsg('☁️ Đã tải dữ liệu trang trại của bạn!');
+        return;
+      }
+    }
+
+    
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setString('uid', uid);
 
     player      = PlayerModel(uid: uid, name: name);
@@ -374,55 +348,69 @@ class GameProvider extends ChangeNotifier {
     isNight     = false;
     gameStarted = true;
 
+    _generateDailyQuests(1);
     _startAnimalTimer();
     await _saveAll();
     isLoading = false; notifyListeners();
     _audio.startDayBgm();
+    _showMsg('🌾 Chào mừng ${name} đến Nông Trại Xanh!');
   }
 
+  
   Future<bool> tryLoadSavedGame() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // KIỂM TRA ĐỒNG BỘ UID TỪ FIREBASE TRƯỚC KHI TẢI GAME
     final User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      await prefs.setString('uid', currentUser.uid);
-    }
-
-    if (!prefs.containsKey('uid')) return false;
+    if (currentUser == null) return false;
 
     isLoading = true; notifyListeners();
+
+    
+    try {
+      final cloudSave = await _cloud.loadGame();
+      if (cloudSave != null) {
+        player    = cloudSave.player;
+        player!.uid = currentUser.uid;
+        playerCol = player!.playerX; playerRow = player!.playerY;
+        tiles     = cloudSave.tiles;
+        animals   = cloudSave.animals;
+        gameStarted = true;
+        _startAnimalTimer();
+        await _saveLocal();   
+        isLoading = false; notifyListeners();
+        _audio.startDayBgm();
+        return true;
+      }
+    } catch (_) {}
+
+    
     try {
       final p = await _storage.loadPlayer();
-      if (p == null) { isLoading = false; notifyListeners(); return false; }
-
-      // Đảm bảo cập nhật lại đúng UID của Google vào Player
-      if (currentUser != null) {
+      if (p != null) {
         p.uid = currentUser.uid;
+        player    = p;
+        playerCol = p.playerX; playerRow = p.playerY;
+        tiles     = (await _storage.loadTiles()) ?? _buildDefaultTiles();
+        animals   = await _storage.loadAnimals();
+        gameStarted = true;
+        _startAnimalTimer();
+        
+        await _saveCloud();
+        isLoading = false; notifyListeners();
+        _audio.startDayBgm();
+        return true;
       }
+    } catch (_) {}
 
-      player    = p;
-      playerCol = p.playerX; playerRow = p.playerY;
-      tiles     = (await _storage.loadTiles()) ?? _buildDefaultTiles();
-      animals   = await _storage.loadAnimals();
-      gameStarted = true;
-      _startAnimalTimer();
-    } catch (_) {
-      isLoading = false; notifyListeners(); return false;
-    }
     isLoading = false; notifyListeners();
-    _audio.startDayBgm();
-    return true;
+    return false;
   }
 
   List<List<TileModel>> _buildDefaultTiles() => List.generate(
       GameConstants.farmRows,
       (_) => List.generate(GameConstants.farmCols, (_) => TileModel()));
 
-  // ═══════════════════════════════════════════════════════════
-  // ANIMAL TIMER  (50ms roaming AI)
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   void _startAnimalTimer() {
     _animalTimer?.cancel();
     _animalTimer = Timer.periodic(
@@ -436,10 +424,9 @@ class GameProvider extends ChangeNotifier {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // TILE INTERACTION
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   void onTileTap(int row, int col) {
     if (player == null) return;
     if (row < 0 || row >= GameConstants.farmRows ||
@@ -461,13 +448,13 @@ class GameProvider extends ChangeNotifier {
     }
 
     if (_inPen(row, col)) {
-      _showMsg('Khu chăn nuôi 🐔🐄 – dùng panel bên phải để tương tác');
+      _showMsg('Khu chăn nuôi 🐔🐑🐝 – dùng panel bên phải để tương tác');
       notifyListeners(); return;
     }
 
     final tile = tiles[row][col];
     switch (selectedTool) {
-      case ToolType.hoe:         _useHoe(tile);    break;
+      case ToolType.hoe:         _useHoeSmooth(tile, row, col); break;
       case ToolType.wateringCan: _useWater(tile);  break;
       case ToolType.hand:        _useHand(tile);   break;
       case ToolType.fishingRod:  _showMsg('Đến ao để câu cá! 🎣'); break;
@@ -476,15 +463,37 @@ class GameProvider extends ChangeNotifier {
     _saveAll();
   }
 
-  void _useHoe(TileModel t) {
-    if (t.state == TileState.grass) {
-      t.state = TileState.ground;
-      _audio.playHoe();
-      _showMsg('Đã xới đất ⛏️  –  giờ trồng cây (tay → bấm đất)');
-      _progressQuest(QuestType.tillSoil);
-    } else {
+  
+  void _useHoeSmooth(TileModel t, int row, int col) {
+    if (t.state != TileState.grass) {
       _showMsg('Chỉ xới được ô cỏ!');
+      return;
     }
+    final key = '$row,$col';
+    if (_hoeProgress.containsKey(key)) return; 
+
+    _audio.playHoe();
+    _hoeProgress[key] = 0.0;
+    notifyListeners();
+
+    const int steps = 12; 
+    const int stepMs = GameConstants.hoeDurationMs ~/ steps;
+    int step = 0;
+
+    Timer.periodic(Duration(milliseconds: stepMs), (timer) {
+      step++;
+      _hoeProgress[key] = step / steps;
+      notifyListeners();
+      if (step >= steps) {
+        timer.cancel();
+        _hoeProgress.remove(key);
+        t.state = TileState.ground;
+        _showMsg('Đã xới đất ⛏️  –  giờ trồng cây (tay → bấm đất)');
+        _progressQuest(QuestType.tillSoil);
+        notifyListeners();
+        _saveAll();
+      }
+    });
   }
 
   void _useWater(TileModel t) {
@@ -545,30 +554,28 @@ class GameProvider extends ChangeNotifier {
     t.cropType = null;
     t.isWatered = false;
     t.dayPlanted = 0;
-    _storage.updateLeaderboard(player!.uid, player!.name, player!.totalGoldEarned);
+    _cloud.updateLeaderboard(player!.name, player!.totalGoldEarned, player!.level);
     _progressQuest(QuestType.harvestCrops);
     _checkAchievements();
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // FISHING
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   Future<void> _startFishing() async {
     if (isFishing) return;
-    isFishing       = true;
-    fishingJustDone = false;
+    isFishing        = true;
+    fishingJustDone  = false;
     fishingCountdown = GameConstants.fishingSeconds;
     notifyListeners();
     for (int i = GameConstants.fishingSeconds; i > 0; i--) {
-      // ✅ await ensures the sound starts before we move to the next second
       await _audio.playFishing();
       await Future.delayed(const Duration(seconds: 1));
       fishingCountdown = i - 1;
       notifyListeners();
     }
     isFishing       = false;
-    fishingJustDone = true; // ← game_screen watches this to auto-open panel
+    fishingJustDone = true;
     if (player != null) {
       player!.inventory.fishCount++;
       player!.totalFishCaught++;
@@ -580,24 +587,22 @@ class GameProvider extends ChangeNotifier {
     _saveAll();
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // DAY / SLEEP
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   Future<void> goToSleep() async {
     if (isNight) return;
     isNight = true;
     _audio.playSleep();
-    _audio.startNightBgm();
+    Future.delayed(const Duration(milliseconds: 600), _audio.startNightBgm);
     notifyListeners();
-
     await Future.delayed(const Duration(milliseconds: 1600));
 
     player!.currentDay++;
     for (final row in tiles) {
       for (final t in row) {
-        if (t.state == TileState.watered)      t.state = TileState.growing;
-        else if (t.state == TileState.growing)  t.state = TileState.ready;
+        if (t.state == TileState.watered)     t.state = TileState.growing;
+        else if (t.state == TileState.growing) t.state = TileState.ready;
         t.isWatered = false;
       }
     }
@@ -607,24 +612,19 @@ class GameProvider extends ChangeNotifier {
       a.isFed = false;
     }
     player!.getDiaryForDay(player!.currentDay);
-
-    // Generate new daily quests for the new day
     _generateDailyQuests(player!.currentDay);
-
     isNight = false;
-    _audio.startDayBgm();
     _audio.playRooster();
-
+    Future.delayed(const Duration(milliseconds: 1200), _audio.startDayBgm);
     _checkAchievements();
     _showMsg('🐓  Gà gáy rồi! Ngày ${player!.currentDay} bắt đầu ☀️');
     notifyListeners();
     await _saveAll();
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // SCENE TRANSITIONS
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   void enterHouse() {
     currentScene = GameScene.house;
     _showMsg('🏠 Đã vào nhà!');
@@ -636,10 +636,9 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // SHOP
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   bool buySeed(CropType type, int qty) {
     if (player == null) return false;
     if (!isCropUnlocked(type)) {
@@ -678,15 +677,13 @@ class GameProvider extends ChangeNotifier {
     notifyListeners(); _saveAll(); return true;
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // ANIMALS
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   void feedAnimal(String id) {
     if (player == null) return;
     final a = animals.where((x) => x.id == id).firstOrNull;
     if (a == null) return;
-
     if (a.state == AnimalState.baby) {
       final daysLeft = a.type.daysToAdult - (player!.currentDay - a.dayBorn);
       _showMsg('${a.type.babyEmoji} Còn nhỏ! Ngủ thêm ~$daysLeft ngày nữa 🌱');
@@ -721,16 +718,30 @@ class GameProvider extends ChangeNotifier {
     _addExp((v / 10).round().clamp(2, 20));
     a.hasProduced = true;
 
-    if (a.type == AnimalType.chicken || a.type == AnimalType.duck) {
-      player!.inventory.eggCount++;
-    } else if (a.type == AnimalType.cow) {
-      player!.inventory.milkCount++;
+    switch (a.type) {
+      case AnimalType.chicken: case AnimalType.duck: case AnimalType.turkey:
+        player!.inventory.eggCount++;
+        player!.inventory.turkeyEggCount += (a.type == AnimalType.turkey ? 1 : 0);
+        break;
+      case AnimalType.cow: case AnimalType.horse:
+        player!.inventory.milkCount++;
+        player!.inventory.horseMilkCount += (a.type == AnimalType.horse ? 1 : 0);
+        break;
+      case AnimalType.sheep:
+        player!.inventory.woolCount++;
+        break;
+      case AnimalType.bee:
+        player!.inventory.honeyCount++;
+        break;
+      case AnimalType.rabbit: case AnimalType.peacock:
+        player!.inventory.peacockFeatherCount += (a.type == AnimalType.peacock ? 1 : 0);
+        break;
+      case AnimalType.pig: break;
     }
-    // Pig: cộng tiền luôn, không lưu inventory
 
     _audio.playCoins();
     _showMsg('+${v}🪙  Thu được ${a.type.produce}!');
-    _storage.updateLeaderboard(player!.uid, player!.name, player!.totalGoldEarned);
+    _cloud.updateLeaderboard(player!.name, player!.totalGoldEarned, player!.level);
     _checkAchievements();
     notifyListeners(); _saveAll();
   }
@@ -747,15 +758,14 @@ class GameProvider extends ChangeNotifier {
     player!.inventory.fishCount = 0;
     _audio.playCoins();
     _showMsg('+${earned}🪙  Bán toàn bộ cá!');
-    _storage.updateLeaderboard(player!.uid, player!.name, player!.totalGoldEarned);
+    _cloud.updateLeaderboard(player!.name, player!.totalGoldEarned, player!.level);
     _checkAchievements();
     notifyListeners(); _saveAll();
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // MISC
-  // ═══════════════════════════════════════════════════════════
-
+  
+  
+  
   void selectSeed(CropType t) {
     if (!isCropUnlocked(t)) {
       _showMsg('🔒 Cần Lv${t.unlockLevel} để dùng ${t.label}!');
@@ -772,15 +782,12 @@ class GameProvider extends ChangeNotifier {
 
   void feedAllAnimals() {
     if (player == null) return;
-    final feedables = animals
-        .where((a) => a.state == AnimalState.adult && !a.isFed)
-        .toList();
+    final feedables = animals.where((a) => a.state == AnimalState.adult && !a.isFed).toList();
     if (feedables.isEmpty) {
       _showMsg('Tất cả vật nuôi đã ăn no ✅');
       notifyListeners(); return;
     }
-    int fedCount = 0;
-    int spent = 0;
+    int fedCount = 0, spent = 0;
     for (final a in feedables) {
       final cost = a.type.feedCost;
       if (player!.gold < cost) break;
@@ -790,15 +797,38 @@ class GameProvider extends ChangeNotifier {
       fedCount++;
     }
     if (fedCount == 0) {
-      final minCost = feedables
-          .map((a) => a.type.feedCost)
-          .reduce((a, b) => a < b ? a : b);
+      final minCost = feedables.map((a) => a.type.feedCost).reduce((a, b) => a < b ? a : b);
       _showMsg('Không đủ 🪙 để cho ăn! Cần ít nhất ${minCost}🪙');
       notifyListeners(); return;
     }
     _audio.playFeed();
     _progressQuest(QuestType.feedAnimals, amount: fedCount);
     _showMsg('🌽 Đã cho ăn $fedCount con (-${spent}🪙)');
+    notifyListeners(); _saveAll();
+  }
+
+  
+  void claimDailyGift() {
+    if (player == null) return;
+    final today = player!.currentDay;
+    if (player!.lastGiftDay >= today) {
+      _showMsg('🎁 Bạn đã nhận quà hôm nay rồi! Quay lại ngày mai nhé!');
+      notifyListeners(); return;
+    }
+    
+    final rng = today * 31 + player!.level * 7;
+    final goldGift = 50 + (rng % 100);
+    final seedBonus = (rng % 3) == 0;
+    player!.gold += goldGift;
+    player!.lastGiftDay = today;
+    _audio.playCoins();
+    if (seedBonus) {
+      _showMsg('🎁 Phần thưởng: +${goldGift}🪙 + Hạt giống miễn phí! 🌱');
+    } else {
+      _showMsg('🎁 Phần thưởng hôm nay: +${goldGift}🪙! 💰');
+    }
+    _addExp(30);
+    _checkAchievements();
     notifyListeners(); _saveAll();
   }
 
@@ -810,19 +840,39 @@ class GameProvider extends ChangeNotifier {
 
   Future<void> saveGame() async {
     await _saveAll();
-    _showMsg('💾 Game đã được lưu!');
+    _showMsg('☁️ Game đã lưu lên đám mây!');
     notifyListeners();
   }
 
-  Future<List<Map<String, dynamic>>> getLeaderboard() => _storage.getLeaderboard();
+  Future<List<Map<String, dynamic>>> getLeaderboard() => _cloud.getLeaderboard();
 
+  
   Future<void> _saveAll() async {
+    if (player == null) return;
+    await Future.wait([
+      _saveLocal(),
+      _saveCloudDebounced(),
+    ]);
+  }
+
+  Future<void> _saveLocal() async {
     if (player == null) return;
     await Future.wait([
       _storage.savePlayer(player!),
       _storage.saveTiles(tiles),
       _storage.saveAnimals(animals),
     ]);
+  }
+
+  Future<void> _saveCloud() async {
+    if (player == null) return;
+    await _cloud.saveGame(player: player!, tiles: tiles, animals: animals);
+  }
+
+  
+  Future<void> _saveCloudDebounced() async {
+    _cloudSaveDebounce?.cancel();
+    _cloudSaveDebounce = Timer(const Duration(seconds: 3), _saveCloud);
   }
 
   void _showMsg(String msg) {
@@ -843,6 +893,7 @@ class GameProvider extends ChangeNotifier {
   @override
   void dispose() {
     _animalTimer?.cancel();
+    _cloudSaveDebounce?.cancel();
     super.dispose();
   }
 }

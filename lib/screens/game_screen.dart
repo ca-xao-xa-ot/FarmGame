@@ -14,14 +14,16 @@ import '../widgets/quest_panel.dart';
 import '../widgets/achievement_dialog.dart';
 import 'house_screen.dart';
 
-// ================================================================
-//  GAME SCREEN  v5
-//  ✅ Fix #1 – Tile tap now uses Listener (bypasses gesture arena)
-//              with screen-space delta to reject drag vs tap
-//  ✅ Fix #2 – Virtual D-pad replaces keyboard-only hint;
-//              Listener-based press/release → buttery 60fps movement
-//  ✅ Audio   – D-pad interact button fires E-key logic
-// ================================================================
+
+
+
+
+
+
+
+
+
+
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -29,26 +31,28 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _GameScreenState extends State<GameScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late Ticker _ticker;
   Duration _lastTick  = Duration.zero;
   bool     _firstTick = true;
-  final TransformationController _camCtrl = TransformationController();
-  final FocusNode _focusNode = FocusNode();
+  final TransformationController _camCtrl  = TransformationController();
+  final FocusNode                _focusNode = FocusNode();
   Offset _pointerDownScreen = Offset.zero;
   bool _showAnimalPanel = false;
-  bool _showQuestPanel = false;
+  bool _showQuestPanel  = false;
+
   @override
   void initState() {
     super.initState();
-
-    // Bật lắng nghe sự kiện vòng đời App (Để biết khi nào người dùng thoát app)
     WidgetsBinding.instance.addObserver(this);
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final gp = context.read<GameProvider>();
-      bool loaded = await gp.tryLoadSavedGame();
-      if (!loaded) await gp.startNewGame("Nông dân");
+      
+      if (!gp.gameStarted) {
+        bool loaded = await gp.tryLoadSavedGame();
+        if (!loaded) await gp.startNewGame('Nông dân');
+      }
     });
 
     _ticker = createTicker((elapsed) {
@@ -64,27 +68,25 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
   }
 
-  // HÀM NÀY GIÚP AUTO-SAVE KHI BẠN VUỐT ẨN HOẶC ĐÓNG APP / TRÌNH DUYỆT
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive || state == AppLifecycleState.hidden) {
-      // Gọi hàm lưu dữ liệu lập tức khi thoát
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
       context.read<GameProvider>().saveGame();
     }
   }
 
   @override
   void dispose() {
-    // Tắt lắng nghe khi thoát màn hình
     WidgetsBinding.instance.removeObserver(this);
-
     _ticker.dispose();
     _camCtrl.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  // ── Smooth camera follow ─────────────────────────────────────
+  
   void _followPlayer() {
     final gp   = context.read<GameProvider>();
     final size = MediaQuery.of(context).size;
@@ -93,10 +95,10 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     final targetX = gp.playerCol * ts - size.width  / 2 + ts / 2;
     final targetY = gp.playerRow * ts - size.height / 2 + ts / 2;
 
-    final maxX    = GameConstants.farmCols * ts - size.width;
-    final maxY    = GameConstants.farmRows * ts - size.height;
-    final cx      = targetX.clamp(0.0, maxX.clamp(0.0, double.infinity));
-    final cy      = targetY.clamp(0.0, maxY.clamp(0.0, double.infinity));
+    final maxX = GameConstants.farmCols * ts - size.width;
+    final maxY = GameConstants.farmRows * ts - size.height;
+    final cx   = targetX.clamp(0.0, maxX.clamp(0.0, double.infinity));
+    final cy   = targetY.clamp(0.0, maxY.clamp(0.0, double.infinity));
 
     final cur  = _camCtrl.value.getTranslation();
     const lerp = 0.14;
@@ -106,14 +108,22 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _camCtrl.value = Matrix4.identity()..translate(nx, ny);
   }
 
-  // ════════════════════════════════════════════════════════════
-  // BUILD
-  // ════════════════════════════════════════════════════════════
+  
+  
+  
 
   @override
   Widget build(BuildContext context) {
     return Consumer<GameProvider>(builder: (ctx, gp, _) {
       if (gp.currentScene == GameScene.house) return const HouseScreen();
+
+      
+      final screenH  = MediaQuery.of(context).size.height;
+      final topPad   = MediaQuery.of(context).padding.top;
+      
+      final hudH     = 60.0 + topPad;    
+      final toolbarH = 92.0;
+      final panelMaxH = screenH - hudH - toolbarH - 16;
 
       return Focus(
         focusNode : _focusNode,
@@ -133,103 +143,129 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           backgroundColor: const Color(0xFF5A8F2E),
           body: Stack(children: [
 
-            // ① Farm view (pan/zoom) + Listener for tile taps
+            
             _buildFarmView(gp),
 
-            // ② Night overlay
+            
             AnimatedOpacity(
               opacity : gp.isNight ? 0.72 : 0.0,
               duration: const Duration(milliseconds: 1200),
               child   : Container(color: const Color(0xFF000033)),
             ),
 
-            // ③ HUD
+            
             Positioned(
               top: 0, left: 0, right: 0,
               child: SafeArea(child: HudWidget(gp: gp)),
             ),
 
-            // ④ Toolbar
+            
             Positioned(
               bottom: 0, left: 0, right: 0,
               child: ToolbarWidget(gp: gp),
             ),
 
-            // ⑤ Action buttons (right)
+            
+            
             Positioned(
-              bottom: 100, right: 12,
-              child : _buildActionButtons(ctx, gp),
+              bottom: toolbarH + 8,
+              right : 10,
+              child : _buildActionButtons(ctx, gp, panelMaxH),
             ),
 
-            // ⑥ Virtual D-pad (left)  ← replaces keyboard hint
+            
             Positioned(
-              bottom: 100, left: 12,
+              bottom: toolbarH + 8,
+              left  : 10,
               child : _buildDPad(gp),
             ),
 
-            // ⑦ Quest panel (toggleable, left side)
+            
             if (_showQuestPanel)
               Positioned(
-                top: 120,
+                top : hudH,
                 left: 0,
-                child: QuestPanelWidget(
-                  gp: gp,
-                  onClose: () => setState(() => _showQuestPanel = false),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: panelMaxH,
+                    maxWidth : 230,
+                  ),
+                  child: SingleChildScrollView(
+                    child: QuestPanelWidget(
+                      gp     : gp,
+                      onClose: () => setState(() => _showQuestPanel = false),
+                    ),
+                  ),
                 ),
               ),
 
-            // ⑦ Animal panel (toggleable)
+            
             if (_showAnimalPanel)
               Positioned(
-                top: 120,
+                top  : hudH,
                 right: 0,
-                child: AnimalPanelWidget(
-                  gp: gp,
-                  onClose: () => setState(() => _showAnimalPanel = false),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: panelMaxH,
+                    maxWidth : 220,
+                  ),
+                  child: SingleChildScrollView(
+                    child: AnimalPanelWidget(
+                      gp     : gp,
+                      onClose: () => setState(() => _showAnimalPanel = false),
+                    ),
+                  ),
                 ),
-              )
-            else
+              ),
+
+            
+            
+            if (!_showAnimalPanel)
               Positioned(
-                top: 128,
+                top  : hudH + 4,
                 right: 8,
                 child: GestureDetector(
                   onTap: () => setState(() => _showAnimalPanel = true),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.62),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text('🐾', style: TextStyle(fontSize: 16)),
-                      SizedBox(width: 6),
+                      Text('🐾', style: TextStyle(fontSize: 15)),
+                      SizedBox(width: 5),
                       Text('Vật nuôi',
                           style: TextStyle(
                               color: Colors.white,
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: FontWeight.bold)),
                     ]),
                   ),
                 ),
               ),
 
-            // ⑧ Toast (placed under HUD, avoids overlap)
+            
             if (gp.showMessage)
-              Positioned(
-                top: 0, left: 20, right: 20,
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 88),
-                    child: _buildToast(gp.message),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Align(
+                    
+                    
+                    alignment: const Alignment(0.0, -0.25),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 80),
+                      child: _buildToast(gp.message),
+                    ),
                   ),
                 ),
               ),
 
-            // ⑨ Fishing overlay
+            
             if (gp.isFishing)
-              Positioned(top: 150, left: 0, right: 0,
-                  child: _buildFishingOverlay(gp)),
+              Positioned.fill(
+                child: Center(child: _buildFishingOverlay(gp)),
+              ),
 
           ]),
         ),
@@ -237,12 +273,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     });
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FARM VIEW  –  ✅ Listener replaces GestureDetector
-  //   • Listener bypasses gesture arena → always receives events
-  //   • Use SCREEN-space delta (e.position) to tell tap from drag
-  //   • Use LOCAL-space position (e.localPosition) for tile index
-  // ════════════════════════════════════════════════════════════
+  
+  
+  
 
   Widget _buildFarmView(GameProvider gp) {
     final tw = GameConstants.farmCols * GameConstants.tileSize;
@@ -258,21 +291,16 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         width : tw,
         height: th,
         child : Listener(
-          // ── Track touch/mouse DOWN in screen space ──────────
           onPointerDown: (e) {
-            _pointerDownScreen = e.position; // global screen coords
+            _pointerDownScreen = e.position;
           },
-          // ── On UP: if barely moved → it's a tap ─────────────
           onPointerUp: (e) {
-            final screenDelta =
-                (e.position - _pointerDownScreen).distance;
-
-            // Allow up to 10 logical pixels of drift (finger wobble)
+            final screenDelta = (e.position - _pointerDownScreen).distance;
             if (screenDelta < 10.0) {
               _focusNode.requestFocus();
-              // localPosition is already in scene (farm) coordinates
-              final col = (e.localPosition.dx / GameConstants.tileSize).floor();
-              final row = (e.localPosition.dy / GameConstants.tileSize).floor();
+              final scenePos = _camCtrl.toScene(e.localPosition);
+              final col = (scenePos.dx / GameConstants.tileSize).floor();
+              final row = (scenePos.dy / GameConstants.tileSize).floor();
               gp.onTileTap(row, col);
             }
           },
@@ -287,6 +315,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                 playerDir   : gp.playerDir,
                 isMoving    : gp.isMoving,
                 selectedTool: gp.selectedTool,
+                hoeProgress : gp.hoeProgress,
               ),
             ),
           ),
@@ -295,220 +324,221 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     );
   }
 
-  // ════════════════════════════════════════════════════════════
-  // VIRTUAL D-PAD  –  ✅ Listener for zero-lag press/release
-  //
-  //   Layout:
-  //       [ ↑ ]
-  //   [←] [⚡] [→]     ⚡ = Interact (E key)
-  //       [ ↓ ]
-  // ════════════════════════════════════════════════════════════
+  
+  
+  
+  
+  
+  
 
   Widget _buildDPad(GameProvider gp) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Row 1: Up button
         Row(mainAxisSize: MainAxisSize.min, children: [
-          const SizedBox(width: 48),
+          const SizedBox(width: 50),
           _dpadDir('↑', LogicalKeyboardKey.keyW, gp),
-          const SizedBox(width: 48),
+          const SizedBox(width: 50),
         ]),
-        // Row 2: Left | Interact | Right
         Row(mainAxisSize: MainAxisSize.min, children: [
           _dpadDir('←', LogicalKeyboardKey.keyA, gp),
           _dpadAct('⚡', gp),
           _dpadDir('→', LogicalKeyboardKey.keyD, gp),
         ]),
-        // Row 3: Down button
         Row(mainAxisSize: MainAxisSize.min, children: [
-          const SizedBox(width: 48),
+          const SizedBox(width: 50),
           _dpadDir('↓', LogicalKeyboardKey.keyS, gp),
-          const SizedBox(width: 48),
+          const SizedBox(width: 50),
         ]),
       ],
     );
   }
 
-  /// Direction button – holds key while finger is pressed
   Widget _dpadDir(String label, LogicalKeyboardKey key, GameProvider gp) {
     return _DPadButton(
-      child: Text(label,
-          style: const TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-      color: Colors.black.withOpacity(0.58),
+      child   : Text(label,
+          style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+      color   : Colors.black.withOpacity(0.58),
       onDown  : () => gp.handleKeyDown(key),
       onUp    : () => gp.handleKeyUp(key),
       onCancel: () => gp.handleKeyUp(key),
     );
   }
 
-  /// Action (interact) button – fires E key on press
   Widget _dpadAct(String emoji, GameProvider gp) {
     return _DPadButton(
-      child: Text(emoji, style: const TextStyle(fontSize: 20)),
-      color: Colors.amber.withOpacity(0.80),
+      child   : Text(emoji, style: const TextStyle(fontSize: 18)),
+      color   : Colors.amber.withOpacity(0.80),
       onDown  : () => gp.handleKeyDown(LogicalKeyboardKey.keyE),
       onUp    : () => gp.handleKeyUp(LogicalKeyboardKey.keyE),
       onCancel: () => gp.handleKeyUp(LogicalKeyboardKey.keyE),
     );
   }
 
-  // ════════════════════════════════════════════════════════════
-  // ACTION BUTTONS (right side)
-  // ════════════════════════════════════════════════════════════
+  
+  
+  
 
-  Widget _buildActionButtons(BuildContext ctx, GameProvider gp) {
-    final size = MediaQuery.of(ctx).size;
-    final narrow = size.width < 390;
-    final btnSize = narrow ? 46.0 : 50.0;
-    final emojiSize = narrow ? 20.0 : 22.0;
-    final labelFont = narrow ? 9.0 : 10.0;
-
-    // Prevent overflow on short screens
-    final maxH = (size.height - 92 /*toolbar*/ - 120 /*top HUD zone*/)
-        .clamp(240.0, size.height);
+  Widget _buildActionButtons(BuildContext ctx, GameProvider gp, double maxH) {
+    final btns = <Widget>[
+      _fab('🏪', 'Shop',  () => _openShop(ctx, gp),
+          colors: [const Color(0xFFFF9800), const Color(0xFFE65100)]),
+      _fab('🏆', 'Hạng',  () => _openLeaderboard(ctx, gp),
+          colors: [const Color(0xFFFFD700), const Color(0xFFFF8F00)]),
+      _fab('💾', 'Lưu',   () => gp.saveGame(),
+          colors: [const Color(0xFF42A5F5), const Color(0xFF1565C0)]),
+      _fab('🌙', 'Ngủ',   () => gp.goToSleep(),
+          colors: [const Color(0xFF7E57C2), const Color(0xFF4527A0)]),
+      _fab('🐾', 'Nuôi',  () => setState(() => _showAnimalPanel = !_showAnimalPanel),
+          colors: [const Color(0xFF66BB6A), const Color(0xFF2E7D32)]),
+      _fab('📋', 'Quest', () => setState(() => _showQuestPanel = !_showQuestPanel),
+          colors: [const Color(0xFFEF5350), const Color(0xFFC62828)]),
+      _fab(gp.audio.enabled ? '🔊' : '🔇', '',
+              () { gp.audio.setEnabled(!gp.audio.enabled); setState(() {}); }),
+    ];
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: maxH),
       child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            _fab('🏪', 'Shop', () => _openShop(ctx, gp),
-                size: btnSize, emojiSize: emojiSize, labelFont: labelFont),
-            const SizedBox(height: 8),
-            _fab('🏆', 'Hạng', () => _openLeaderboard(ctx, gp),
-                size: btnSize, emojiSize: emojiSize, labelFont: labelFont),
-            const SizedBox(height: 8),
-            _fab('💾', 'Lưu', () => gp.saveGame(),
-                size: btnSize, emojiSize: emojiSize, labelFont: labelFont),
-            const SizedBox(height: 8),
-            _fab('🌙', 'Ngủ', () => gp.goToSleep(),
-                size: btnSize, emojiSize: emojiSize, labelFont: labelFont),
-            const SizedBox(height: 8),
-            _fab('🐾', 'Nuôi', () => setState(() => _showAnimalPanel = !_showAnimalPanel),
-                size: btnSize, emojiSize: emojiSize, labelFont: labelFont),
-            const SizedBox(height: 8),
-            _fab('📋', 'NV', () => setState(() => _showQuestPanel = !_showQuestPanel),
-                size: btnSize, emojiSize: emojiSize, labelFont: labelFont),
-            const SizedBox(height: 8),
-            _fab(gp.audio.enabled ? '🔊' : '🔇', '',
-                () {
-                  gp.audio.setEnabled(!gp.audio.enabled);
-                  setState(() {});
-                },
-                size: btnSize, emojiSize: emojiSize, labelFont: labelFont),
-          ],
+          children: btns.map((b) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: b,
+          )).toList(),
         ),
       ),
     );
   }
 
-  Widget _fab(
-    String emoji,
-    String label,
-    VoidCallback onTap, {
-    double size = 50,
-    double emojiSize = 22,
-    double labelFont = 10,
-  }) {
+  
+  Widget _fab(String emoji, String label, VoidCallback onTap, {List<Color>? colors}) {
+    final btnColors = colors ?? [Colors.white.withOpacity(0.95), Colors.white.withOpacity(0.85)];
+    final isWhite = colors == null;
     return GestureDetector(
-      onTap: () {
-        _focusNode.requestFocus();
-        onTap();
-      },
-      child: Column(children: [
+      onTap: () { _focusNode.requestFocus(); onTap(); },
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
-          width: size,
-          height: size,
+          width: 46, height: 46,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.92),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft, end: Alignment.bottomRight,
+              colors: btnColors,
+            ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              )
+                color: (isWhite ? Colors.black : btnColors[1]).withOpacity(0.3),
+                blurRadius: 8, offset: const Offset(0, 3),
+              ),
+              if (!isWhite) BoxShadow(
+                color: btnColors[0].withOpacity(0.4),
+                blurRadius: 12, spreadRadius: 1,
+              ),
             ],
-          ),
-          child: Center(
-            child: Text(emoji, style: TextStyle(fontSize: emojiSize)),
-          ),
-        ),
-        if (label.isNotEmpty)
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: labelFont,
-              fontWeight: FontWeight.bold,
-              shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+            border: Border.all(
+              color: Colors.white.withOpacity(0.6), width: 1.5,
             ),
           ),
+          child: Center(child: Text(emoji,
+              style: const TextStyle(fontSize: 20))),
+        ),
+        if (label.isNotEmpty) ...[        
+          const SizedBox(height: 1),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.45),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(label, style: const TextStyle(
+              color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold,
+            )),
+          ),
+        ],
       ]),
     );
   }
 
-  // ════════════════════════════════════════════════════════════
-  // TOAST
-  // ════════════════════════════════════════════════════════════
+  
+  
+  
 
   Widget _buildToast(String msg) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.82),
-          borderRadius: BorderRadius.circular(22),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
         ),
-        child: Text(msg,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-            textAlign: TextAlign.center),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.3),
+              blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(color: const Color(0xFF66BB6A).withOpacity(0.4),
+              blurRadius: 8, spreadRadius: 1),
+        ],
+        border: Border.all(color: Colors.white.withOpacity(0.25), width: 1),
       ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Text('✨', style: TextStyle(fontSize: 14)),
+        const SizedBox(width: 6),
+        Flexible(child: Text(msg,
+            style: const TextStyle(color: Colors.white, fontSize: 13,
+                fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center)),
+        const SizedBox(width: 6),
+        const Text('✨', style: TextStyle(fontSize: 14)),
+      ]),
     );
   }
 
-  // ════════════════════════════════════════════════════════════
-  // FISHING OVERLAY
-  // ════════════════════════════════════════════════════════════
+  
+  
+  
 
   Widget _buildFishingOverlay(GameProvider gp) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D47A1).withOpacity(0.92),
-          borderRadius: BorderRadius.circular(18),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
         ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('🎣 Đang câu cá...',
-              style: TextStyle(color: Colors.white, fontSize: 18,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text('${gp.fishingCountdown}s',
-              style: const TextStyle(color: Colors.yellow, fontSize: 36,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: 160,
-            child: LinearProgressIndicator(
-              value: 1 - (gp.fishingCountdown / GameConstants.fishingSeconds),
-              backgroundColor: Colors.blue.shade200,
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.yellow),
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ]),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.lightBlue.withOpacity(0.5), width: 2),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF29B6F6).withOpacity(0.4),
+              blurRadius: 20, spreadRadius: 3),
+        ],
       ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Text('🎣 Đang câu cá...',
+            style: TextStyle(color: Colors.white, fontSize: 18,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Text('${gp.fishingCountdown}s',
+            style: const TextStyle(color: Colors.yellow, fontSize: 36,
+                fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: 160,
+          child: LinearProgressIndicator(
+            value: 1 - (gp.fishingCountdown / GameConstants.fishingSeconds),
+            backgroundColor: Colors.blue.shade200,
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.yellow),
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ]),
     );
   }
 
-  // ════════════════════════════════════════════════════════════
-  // DIALOGS
-  // ════════════════════════════════════════════════════════════
+  
+  
+  
 
   void _openShop(BuildContext ctx, GameProvider gp) {
     showModalBottomSheet(
@@ -529,10 +559,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   }
 }
 
-// ════════════════════════════════════════════════════════════
-// _DPadButton  –  reusable D-pad key widget
-//   Uses Listener for zero-lag pointer events (no gesture arena)
-// ════════════════════════════════════════════════════════════
+
+
+
 
 class _DPadButton extends StatefulWidget {
   final Widget       child;
@@ -559,7 +588,7 @@ class _DPadButtonState extends State<_DPadButton> {
   @override
   Widget build(BuildContext context) {
     return Listener(
-      behavior: HitTestBehavior.opaque, // always receive events
+      behavior: HitTestBehavior.opaque,
       onPointerDown: (_) {
         widget.onDown();
         setState(() => _pressed = true);
