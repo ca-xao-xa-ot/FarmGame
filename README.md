@@ -326,7 +326,6 @@ Dự án cá nhân / học tập. Không sử dụng cho mục đích thương m
 
 <div align="center">
 
-**🌾 Nông Trại Xanh – v8**  
-*Built with ❤️ using Flutter · Dart · Firebase*
+
 
 </div>
