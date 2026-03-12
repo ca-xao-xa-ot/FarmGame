@@ -276,9 +276,9 @@ GameProvider (ChangeNotifier)
 | `farmCols × farmRows` | 20 × 15 | Kích thước bản đồ |
 | `tileSize` | 52.0 px | Kích thước 1 ô |
 | `maxLevel` | 100 | Cấp tối đa |
-| `startGold` | 500🪙 | Vàng ban đầu |
+| `startGold` | 500xu | Vàng ban đầu |
 | `fishingSeconds` | 5 s | Thời gian câu cá |
-| `fishGoldValue` | 30🪙 | Giá bán 1 con cá |
+| `fishGoldValue` | 30xu | Giá bán 1 con cá |
 | `playerMaxSpd` | 6.5 | Tốc độ di chuyển tối đa |
 | `expToNextLevel` | `60 + (lv-1)*25 + (lv-1)²*2` | EXP cần để lên cấp (tối đa 5000) |
 
